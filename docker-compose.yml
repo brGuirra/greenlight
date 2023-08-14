@@ -1,0 +1,16 @@
+services:
+  greenlight_database:
+    image: postgres:15-alpine
+    container_name: greenlight_database
+    restart: always
+    tty: true
+    ports:
+      - 5432:5432
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+volumes:
+  database_data:

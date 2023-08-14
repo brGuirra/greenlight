@@ -8,7 +8,7 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 	env := envelope{
 		"status": "available",
 		"systemInfo": map[string]string{
-			"enviroment": app.config.env,
+			"enviroment": app.config.Environment,
 			"version":    version,
 		},
 	}
