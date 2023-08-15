@@ -39,6 +39,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+
 	_, err = w.Write(js)
 	if err != nil {
 		return err
@@ -104,4 +105,8 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 
 func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
+}
+
+func (app *application) noContentResponse(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNoContent)
 }
