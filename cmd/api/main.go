@@ -18,12 +18,15 @@ import (
 const version = "1.0.0"
 
 type Config struct {
-	Environment          string `mapstructure:"ENVIRONMENT"`
-	Port                 int    `mapstructure:"PORT"`
-	DatabaseURL          string `mapstructure:"DATABASE_URL"`
-	DatabaseMaxOpenConns int    `mapstructure:"DATABASE_MAX_OPEN_CONNECTIONS"`
-	DatabaseMaxIdleConns int    `mapstructure:"DATABASE_MAX_IDLE_CONNECTIONS"`
-	DatabaseMaxIdleTime  string `mapstructure:"DATABASE_MAX_IDLE_TIME"`
+	Environment          string  `mapstructure:"ENVIRONMENT"`
+	Port                 int     `mapstructure:"PORT"`
+	DatabaseURL          string  `mapstructure:"DATABASE_URL"`
+	DatabaseMaxOpenConns int     `mapstructure:"DATABASE_MAX_OPEN_CONNECTIONS"`
+	DatabaseMaxIdleConns int     `mapstructure:"DATABASE_MAX_IDLE_CONNECTIONS"`
+	DatabaseMaxIdleTime  string  `mapstructure:"DATABASE_MAX_IDLE_TIME"`
+	RateLimitRPS         float64 `mapstructure:"RATE_LIMIT_RPS"`
+	RateLimitBurst       int     `mapstructure:"RATE_LIMIT_BURST"`
+	RatelimitEnabled     bool    `mapstructure:"RATE_LIMIT_ENABLED"`
 }
 
 type application struct {
