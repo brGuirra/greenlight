@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/brGuirra/greenlight/internal/data"
+	"github.com/brGuirra/greenlight/internal/jsonlog"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
@@ -26,27 +27,27 @@ type Config struct {
 }
 
 type application struct {
-	logger *log.Logger
+	logger *jsonlog.Logger
 	config *Config
 	models data.Models
 }
 
 func main() {
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	cfg, err := loadConfig()
 	if err != nil {
-		logger.Fatal("Cannot load environent variables: ", err)
+		logger.PrintFatal(err, nil)
 	}
 
 	db, err := openDB(cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.PrintFatal(err, nil)
 	}
 
 	defer db.Close()
 
-	logger.Print("database connection pool established")
+	logger.PrintInfo("database connection pool established", nil)
 
 	app := &application{
 		config: cfg,
@@ -57,14 +58,19 @@ func main() {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      app.routes(),
+		ErrorLog:     log.New(logger, "", 0),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	logger.Printf("starting %s server on %s", cfg.Environment, srv.Addr)
+	logger.PrintInfo("starting server", map[string]string{
+		"addr": srv.Addr,
+		"env":  cfg.Environment,
+	})
+
 	err = srv.ListenAndServe()
-	logger.Fatal(err)
+	logger.PrintFatal(err, nil)
 }
 
 func loadConfig() (*Config, error) {
