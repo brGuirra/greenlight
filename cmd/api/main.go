@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/brGuirra/greenlight/internal/data"
@@ -37,6 +38,7 @@ type application struct {
 	config *Config
 	models data.Models
 	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
