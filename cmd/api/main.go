@@ -8,6 +8,7 @@ import (
 
 	"github.com/brGuirra/greenlight/internal/data"
 	"github.com/brGuirra/greenlight/internal/jsonlog"
+	"github.com/brGuirra/greenlight/internal/mailer"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
@@ -24,12 +25,18 @@ type Config struct {
 	RateLimitRPS         float64 `mapstructure:"RATE_LIMIT_RPS"`
 	RateLimitBurst       int     `mapstructure:"RATE_LIMIT_BURST"`
 	RatelimitEnabled     bool    `mapstructure:"RATE_LIMIT_ENABLED"`
+	SMTPHost             string  `mapstructure:"SMPT_HOST"`
+	SMTPPort             int     `mapstructure:"SMPT_PORT"`
+	SMTPUsername         string  `mapstructure:"SMTP_USERNAME"`
+	SMTPPassword         string  `mapstructure:"SMTP_PASSWORD"`
+	SMTPSender           string  `mapstructure:"SMTP_SENDER"`
 }
 
 type application struct {
 	logger *jsonlog.Logger
 	config *Config
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func main() {
@@ -53,6 +60,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPSender),
 	}
 
 	err = app.serve()
