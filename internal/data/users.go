@@ -11,8 +11,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrDuplicateEmail = errors.New("duplicate email")
-
 type User struct {
 	ID        int64    `json:"id"`
 	CreatedAt string   `json:"createdAt"`
@@ -22,6 +20,10 @@ type User struct {
 	Activated bool     `json:"activated"`
 	Version   int      `json:"version"`
 }
+
+var ErrDuplicateEmail = errors.New("duplicate email")
+
+var AnonymousUser = &User{}
 
 type password struct {
 	plaintext *string
@@ -210,4 +212,8 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	}
 
 	return &user, nil
+}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }

@@ -12,15 +12,16 @@ import (
 )
 
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
 )
 
 type Token struct {
-	Expiry    time.Time
-	Plaintext string
-	Scope     string
-	Hash      []byte
-	UserID    int64
+	Expiry    time.Time `json:"expiry"`
+	Plaintext string    `json:"token"`
+	Scope     string    `json:"-"`
+	Hash      []byte    `json:"-"`
+	UserID    int64     `json:"-"`
 }
 
 func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error) {
