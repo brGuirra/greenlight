@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,43 +14,74 @@ import (
 	"github.com/brGuirra/greenlight/internal/jsonlog"
 	"github.com/brGuirra/greenlight/internal/mailer"
 	_ "github.com/lib/pq"
-	"github.com/spf13/viper"
 )
 
 const version = "1.0.0"
 
-type Config struct {
-	Environment          string  `mapstructure:"ENVIRONMENT"`
-	Port                 int     `mapstructure:"PORT"`
-	DatabaseURL          string  `mapstructure:"DATABASE_URL"`
-	DatabaseMaxOpenConns int     `mapstructure:"DATABASE_MAX_OPEN_CONNECTIONS"`
-	DatabaseMaxIdleConns int     `mapstructure:"DATABASE_MAX_IDLE_CONNECTIONS"`
-	DatabaseMaxIdleTime  string  `mapstructure:"DATABASE_MAX_IDLE_TIME"`
-	RateLimitRPS         float64 `mapstructure:"RATE_LIMIT_RPS"`
-	RateLimitBurst       int     `mapstructure:"RATE_LIMIT_BURST"`
-	RatelimitEnabled     bool    `mapstructure:"RATE_LIMIT_ENABLED"`
-	SMTPHost             string  `mapstructure:"SMPT_HOST"`
-	SMTPPort             int     `mapstructure:"SMPT_PORT"`
-	SMTPUsername         string  `mapstructure:"SMTP_USERNAME"`
-	SMTPPassword         string  `mapstructure:"SMTP_PASSWORD"`
-	SMTPSender           string  `mapstructure:"SMTP_SENDER"`
+type config struct {
+	port int
+	env  string
+	db   struct {
+		dsn          string
+		maxOpenConns int
+		maxIdleConns int
+		maxIdleTime  string
+	}
+	limiter struct {
+		enabled bool
+		rps     float64
+		burst   int
+	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 type application struct {
 	logger *jsonlog.Logger
-	config *Config
+	config config
 	models data.Models
 	mailer mailer.Mailer
 	wg     sync.WaitGroup
 }
 
 func main() {
-	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+	var cfg config
 
-	cfg, err := loadConfig()
-	if err != nil {
-		logger.PrintFatal(err, nil)
-	}
+	flag.IntVar(&cfg.port, "port", 4000, "API server port")
+	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
+
+	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
+	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
+	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "", "SMTP sender")
+
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
+		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
+
+	flag.Parse()
+
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	db, err := openDB(cfg)
 	if err != nil {
@@ -62,7 +96,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
-		mailer: mailer.New(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPSender),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
@@ -71,33 +105,16 @@ func main() {
 	}
 }
 
-func loadConfig() (*Config, error) {
-	cfg := Config{}
-	viper.SetConfigFile(".env")
-
-	err := viper.ReadInConfig()
+func openDB(cfg config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", cfg.db.dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	err = viper.Unmarshal(&cfg)
-	if err != nil {
-		return nil, err
-	}
+	db.SetMaxOpenConns(cfg.db.maxOpenConns)
+	db.SetMaxIdleConns(cfg.db.maxIdleConns)
 
-	return &cfg, nil
-}
-
-func openDB(cfg *Config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.DatabaseURL)
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
-	db.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
-
-	duration, err := time.ParseDuration(cfg.DatabaseMaxIdleTime)
+	duration, err := time.ParseDuration(cfg.db.maxIdleTime)
 	if err != nil {
 		return nil, err
 	}
