@@ -1,5 +1,5 @@
 services:
-  greenlight_database:
+  database:
     image: postgres:15-alpine
     container_name: greenlight_database
     restart: always
@@ -12,5 +12,18 @@ services:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+  api:
+    container_name: greenlight_api
+    build:
+      context: .
+      dockerfile: ./dev.dockerfile
+    ports:
+      - 4000:4000
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@database:5432/${DATABASE_NAME}?sslmode=disable
+    volumes:
+      - ./:/app
 volumes:
   database_data:

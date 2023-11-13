@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -45,7 +46,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
-			v.AddError("email", "a user with this email address already exists")
+			v.AddError("email", "an user with this email address already exists")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -73,6 +74,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
+			fmt.Println("CAIU AQUI!!!")
 			app.logger.PrintError(err, nil)
 		}
 	})
