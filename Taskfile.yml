@@ -15,10 +15,10 @@ tasks:
     summary: |
       Create a new database migration
 
-      It will create a new database migration
-      into ./migrations/, the name must be provided.
+      It will create a new database migration into 
+      migrations folder, the name must be provided.
     cmds:
-      - migrate create -seq -ext=.sql -dir=./migrations {{.CLI_ARGS}}
+      - migrate create -seq -ext=.sql -dir=./db/migrations {{.CLI_ARGS}}
     silent: true
   db:migrations:up:
     desc: Apply migrations to database
@@ -28,7 +28,7 @@ tasks:
       It will apply all migrations to the database
       or up to n number of migrations passed as argument.
     cmds:
-      - migrate -path ./migrations -database ${DATABASE_URL} -verbose up {{.CLI_ARGS}}
+      - migrate -path ./db/migrations -database ${DATABASE_URL} -verbose up {{.CLI_ARGS}}
     silent: true
 
   db:migrations:down:
@@ -38,7 +38,7 @@ tasks:
 
       It will revert the last migration in the database.
     cmds:
-      - migrate -path ./migrations -database ${DATABASE_URL} -verbose down
+      - migrate -path ./db/migrations -database ${DATABASE_URL} -verbose down
     silent: true
 
   db:migrations:down:all:
@@ -49,8 +49,17 @@ tasks:
       It will revert all migrations and erase all data
       in the database.
     cmds:
-      - migrate -path ./migrations -database ${DATABASE_URL} -verbose down --all
+      - migrate -path ./db/migrations -database ${DATABASE_URL} -verbose down --all
+  db:seed:
+    desc: Seed development database
+    summary: |
+      Seed development database
 
+      It will run sql statements to popoulate the
+      database with fake data.
+    cmds:
+      - docker compose exec database psql -U ${DATABASE_USERNAME} -d ${DATABASE_NAME} -a -f /home/seed.sql
+    silent: true
   dev:
     summary: |
       Starts the api in development mode
@@ -73,4 +82,14 @@ tasks:
       mode watching for file changes.
     cmds:
       - docker compose up -d database api
+    silent: true
+  stop:
+    desc: Stops development environment with docker compose
+    summary: |
+      Stops development environment with docker compose
+
+      It will stops database and api containers with
+      docker compose.
+    cmds:
+      - docker compose stop database api
     silent: true

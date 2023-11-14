@@ -8,6 +8,7 @@ services:
       - 5432:5432
     volumes:
       - database_data:/var/lib/postgresql/data
+      - ./db/seed/seed.sql:/home/seed.sql
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
