@@ -4,15 +4,73 @@ dotenv:
   - ".env"
 
 tasks:
-  migrate_up:
+  default:
+    desc: List all available tasks
     cmds:
-      - migrate -path ./migrations -database ${DATABASE_URL} -verbose up
+      - task --list
     silent: true
-  migrate_down:
+
+  db:migrations:new:
+    desc: Create a new database migration
+    summary: |
+      Create a new database migration
+
+      It will create a new database migration
+      into ./migrations/, the name must be provided.
+    cmds:
+      - migrate create -seq -ext=.sql -dir=./migrations {{.CLI_ARGS}}
+    silent: true
+  db:migrations:up:
+    desc: Apply migrations to database
+    summary: |
+      Apply migrations to database
+
+      It will apply all migrations to the database
+      or up to n number of migrations passed as argument.
+    cmds:
+      - migrate -path ./migrations -database ${DATABASE_URL} -verbose up {{.CLI_ARGS}}
+    silent: true
+
+  db:migrations:down:
+    desc: Revert migration in database
+    summary: |
+      Revert migration in database
+
+      It will revert the last migration in the database.
     cmds:
       - migrate -path ./migrations -database ${DATABASE_URL} -verbose down
     silent: true
-  dev:
+
+  db:migrations:down:all:
+    desc: Revert all migrations in the database
+    summary: |
+      Revert all migrations in the database
+
+      It will revert all migrations and erase all data
+      in the database.
     cmds:
-      - CompileDaemon -build="go build -o ./bin/api ./cmd/api" -command="./bin/api -db-dsn=${DATABASE_URL} -smtp-host=${SMPT_HOST} -smtp-port=${SMPT_PORT} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -smtp-sender=${SMTP_SENDER} -cors-trusted-origins=${CORS_TRUSTED_ORIGINS}"
+      - migrate -path ./migrations -database ${DATABASE_URL} -verbose down --all
+
+  dev:
+    summary: |
+      Starts the api in development mode
+
+      It will start the api in development mode
+      watching for file changes. This command is
+      used alongside docker to build the development
+      environment in Dockerfile.
+    cmds:
+      - CompileDaemon -build="go build -o ./tmp/api ./cmd/api" -command="./tmp/api -db-dsn=${DATABASE_URL} -smtp-host=${SMPT_HOST} -smtp-port=${SMPT_PORT} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -smtp-sender=${SMTP_SENDER} -cors-trusted-origins=${CORS_TRUSTED_ORIGINS}"
+    silent: true
+
+  up:
+    desc: Starts development environment with docker compose
+    summary: |
+      Starts development environment with docker compose
+
+      It will starts database and api containers with
+      docker compose. The api will be in development
+      mode watching for file changes.
+    cmds:
+      - docker compose up -d database api
     silent: true
