@@ -1,14 +1,21 @@
 version: "3"
 
-dotenv:
-  - ".env"
+dotenv: [".development.env"]
 
 tasks:
+  # ==================================================================================== #
+  # HELPERS
+  # ==================================================================================== #
+
   default:
     desc: List all available tasks
     cmds:
       - task --list
     silent: true
+
+  # ==================================================================================== #
+  # DEVELOPMENT
+  # ==================================================================================== #
 
   db:migrations:new:
     desc: Create a new database migration
@@ -58,7 +65,7 @@ tasks:
       It will run sql statements to popoulate the
       database with fake data.
     cmds:
-      - docker compose exec database psql -U ${DATABASE_USERNAME} -d ${DATABASE_NAME} -a -f /home/seed.sql
+      - go run ./db/seed/seed.go -db-dsn=${DATABASE_URL}
     silent: true
   dev:
     summary: |
@@ -81,7 +88,7 @@ tasks:
       docker compose. The api will be in development
       mode watching for file changes.
     cmds:
-      - docker compose up -d database api
+      - docker compose --env-file ./.${APP_ENV}.env up -d database api
     silent: true
   stop:
     desc: Stops development environment with docker compose
@@ -91,5 +98,48 @@ tasks:
       It will stops database and api containers with
       docker compose.
     cmds:
-      - docker compose stop database api
+      - docker compose --env-file ./.${APP_ENV}.env stop database api
+    silent: true
+
+  # ==================================================================================== #
+  # QUALITY CONTROL
+  # ==================================================================================== #
+
+  vendor:
+    desc: "Tidy and vendor dependencies"
+    cmds:
+      - echo "Tidying and verifying module dependencies..."
+      - go mod tidy
+      - go mod verify
+      - echo "Vendoring dependencies..."
+      - go mod vendor
+    silent: true
+
+  test:integration:
+    desc: "Run integration tests"
+    dotenv: [".test.env"]
+    cmds:
+      - docker compose --env-file ./.${APP_ENV}.env up -d database_test
+      - migrate -path ./db/migrations -database ${DATABASE_URL} -verbose up
+      - gotestsum --format testname './...' -tags=integration -db-dsn=${DATABASE_URL}
+      - docker compose --env-file ./.${APP_ENV}.env stop database_test
+    silent: true
+
+  audit:
+    desc: "Tidy dependencies and format, vet and test all code"
+    summary: |
+      Tidy dependencies and format, vet and test all code
+
+      It will tidy dependencies and verify their check sums,
+      format the code with the official format tool for Go and
+      run static analysis in the project, and run all tests.
+    cmds:
+      - task vendor
+      - echo "Formatting code..."
+      - go fmt ./...
+      - echo "Vetting code..."
+      - go vet ./...
+      - staticcheck ./...
+
+      - go test -race -vet=off ./...
     silent: true
