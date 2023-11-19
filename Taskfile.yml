@@ -120,7 +120,6 @@ tasks:
     dotenv: [".test.env"]
     cmds:
       - docker compose --env-file ./.${APP_ENV}.env up -d database_test
-      - migrate -path ./db/migrations -database ${DATABASE_URL} -verbose up
       - gotestsum --format testname './...' -tags=integration -db-dsn=${DATABASE_URL}
       - docker compose --env-file ./.${APP_ENV}.env stop database_test
     silent: true

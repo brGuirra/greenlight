@@ -11,6 +11,8 @@ import (
 	"github.com/lib/pq"
 )
 
+var MoviesSortSafeList = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
 type Movie struct {
 	ID        int64     `json:"id"`
 	Title     string    `json:"title"`
@@ -44,7 +46,7 @@ type MovieModel struct {
 
 func (m MovieModel) Insert(movie *Movie) error {
 	query := `
-        INSERT INTO movies (title, year, runtime, genres) 
+        INSERT INTO movies (title, year, runtime, genres)
         VALUES ($1, $2, $3, $4)
         RETURNING id, created_at, version`
 
@@ -154,12 +156,12 @@ func (m MovieModel) Delete(id int64) error {
 	return nil
 }
 
-func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
+func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]Movie, Metadata, error) {
 	query := fmt.Sprintf(`
         SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
         FROM movies
-        WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '') 
-        AND (genres @> $2 OR $2 = '{}')     
+        WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+        AND (genres @> $2 OR $2 = '{}')
         ORDER BY %s %s, id ASC
         LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
@@ -176,7 +178,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	defer rows.Close()
 
 	totalRecords := 0
-	movies := []*Movie{}
+	movies := []Movie{}
 
 	for rows.Next() {
 		var movie Movie
@@ -195,7 +197,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 			return nil, Metadata{}, err
 		}
 
-		movies = append(movies, &movie)
+		movies = append(movies, movie)
 	}
 
 	if err = rows.Err(); err != nil {

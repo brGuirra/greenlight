@@ -22,7 +22,7 @@ func main() {
 	}
 	defer db.Close()
 
-	script, err := os.ReadFile("./db/seed/seed.sql")
+	script, err := os.ReadFile("./db/seed/movies.sql")
 	if err != nil {
 		log.Fatal(err)
 	}

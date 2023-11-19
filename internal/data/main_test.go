@@ -14,7 +14,6 @@ import (
 )
 
 var testDB *sql.DB
-var testModels Models
 
 func TestMain(m *testing.M) {
 	var dsn string
@@ -27,8 +26,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalln("cannot connect to database: ", err)
 	}
-
-	testModels = NewModels(testDB)
 
 	os.Exit(m.Run())
 }
