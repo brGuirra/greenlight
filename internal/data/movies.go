@@ -58,9 +58,9 @@ func (m MovieModel) Insert(movie *Movie) error {
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m MovieModel) Get(id int64) (*Movie, error) {
+func (m MovieModel) Get(id int64) (Movie, error) {
 	if id < 1 {
-		return nil, ErrRecordNotFound
+		return Movie{}, ErrRecordNotFound
 	}
 
 	query := `
@@ -85,13 +85,13 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
+			return Movie{}, ErrRecordNotFound
 		default:
-			return nil, err
+			return Movie{}, err
 		}
 	}
 
-	return &movie, nil
+	return movie, nil
 }
 
 func (m MovieModel) Update(movie *Movie) error {

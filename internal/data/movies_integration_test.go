@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/lib/pq"
@@ -18,8 +19,10 @@ import (
 // by itegers to help controlling sort direction with `slices.SortFunc`
 type sortOrder int
 
-const ASC sortOrder = 1
-const DESC sortOrder = -1
+const (
+	ASC  sortOrder = 1
+	DESC sortOrder = -1
+)
 
 // fallbackSort takes in two `Movie` and returns
 // and integer indicationg if `a.ID` is smaller,
@@ -180,6 +183,14 @@ func createRandomMovie(t *testing.T, m *Models) Movie {
 
 	require.NoError(t, err)
 
+	require.Equal(t, movie.Version, int32(1))
+	require.NotZero(t, movie.ID)
+	require.NotZero(t, movie.CreatedAt)
+	require.NotZero(t, movie.Title)
+	require.NotZero(t, movie.Year)
+	require.NotZero(t, movie.Runtime)
+	require.NotZero(t, movie.Genres)
+
 	return movie
 }
 
@@ -190,7 +201,7 @@ func createRandomMovie(t *testing.T, m *Models) Movie {
 func setup(t *testing.T) []Movie {
 	t.Helper()
 
-	var movies = make([]Movie, 0)
+	movies := make([]Movie, 0)
 
 	script, err := os.ReadFile("../../db/seed/movies.sql")
 	if err != nil {
@@ -243,6 +254,16 @@ func teardown(t *testing.T) {
 	}
 }
 
+func TestInsert(t *testing.T) {
+	testModels := NewModels(testDB)
+
+	createRandomMovie(t, &testModels)
+
+	t.Cleanup(func() {
+		teardown(t)
+	})
+}
+
 func TestGetAll(t *testing.T) {
 	const titleSearchTerm = "The"
 	const noResultsTitleSearchTerm = "Damage"
@@ -252,7 +273,6 @@ func TestGetAll(t *testing.T) {
 	movies := setup(t)
 
 	assertMovies := func(t *testing.T, expected []Movie, actual []Movie) {
-
 		require.NotZero(t, actual)
 		require.Len(t, actual, len(expected))
 
@@ -1036,4 +1056,114 @@ func TestGetAll(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestGet(t *testing.T) {
+	testModels := NewModels(testDB)
+
+	t.Run("Successfully return movie data", func(t *testing.T) {
+		createdMovie := createRandomMovie(t, &testModels)
+		gotMovie, err := testModels.Movies.Get(createdMovie.ID)
+
+		require.NoError(t, err)
+		require.Equal(t, createdMovie.ID, gotMovie.ID)
+		require.Equal(t, createdMovie.Title, gotMovie.Title)
+		require.Equal(t, createdMovie.Year, gotMovie.Year)
+		require.Equal(t, createdMovie.Runtime, gotMovie.Runtime)
+		require.Equal(t, createdMovie.Version, gotMovie.Version)
+		require.EqualValues(t, createdMovie.Genres, gotMovie.Genres)
+		require.WithinDuration(t, createdMovie.CreatedAt, gotMovie.CreatedAt, time.Second)
+
+		t.Cleanup(func() {
+			teardown(t)
+		})
+	})
+
+	t.Run("'ErrRecordNotFound' when given 'ID' does not exist", func(t *testing.T) {
+		gotMovie, err := testModels.Movies.Get(gofakeit.Int64())
+
+		require.ErrorIs(t, err, ErrRecordNotFound)
+		require.Zero(t, gotMovie)
+	})
+
+	t.Run("'ErrRecordNotFound' when given 'ID' is lower than 1", func(t *testing.T) {
+		gotMovie, err := testModels.Movies.Get(0)
+
+		require.ErrorIs(t, err, ErrRecordNotFound)
+		require.Zero(t, gotMovie)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	testModels := NewModels(testDB)
+
+	t.Run("Successfully delete a movie", func(t *testing.T) {
+		movie := createRandomMovie(t, &testModels)
+
+		err := testModels.Movies.Delete(movie.ID)
+
+		require.NoError(t, err)
+
+		gotMovie, err := testModels.Movies.Get(movie.ID)
+
+		require.Zero(t, gotMovie)
+		require.ErrorIs(t, err, ErrRecordNotFound)
+
+		t.Cleanup(func() {
+			teardown(t)
+		})
+	})
+
+	t.Run("'ErrRecordNotFound' when given 'ID' does not exist", func(t *testing.T) {
+		err := testModels.Movies.Delete(gofakeit.Int64())
+
+		require.ErrorIs(t, err, ErrRecordNotFound)
+	})
+
+	t.Run("'ErrRecordNotFound' when given 'ID' is lower than 1", func(t *testing.T) {
+		err := testModels.Movies.Delete(0)
+
+		require.ErrorIs(t, err, ErrRecordNotFound)
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	testModels := NewModels(testDB)
+
+	t.Run("Successfully update a movie", func(t *testing.T) {
+		movie := createRandomMovie(t, &testModels)
+
+		movie.Title = "New Title"
+		movie.Runtime = movie.Runtime - Runtime(1)
+		movie.Year = movie.Year - 1
+
+		err := testModels.Movies.Update(&movie)
+		require.NoError(t, err)
+
+		updatedMovie, err := testModels.Movies.Get(movie.ID)
+		require.NoError(t, err)
+
+		require.Equal(t, movie.Title, updatedMovie.Title)
+		require.Equal(t, movie.Runtime, updatedMovie.Runtime)
+		require.Equal(t, movie.Year, updatedMovie.Year)
+
+		t.Cleanup(func() {
+			teardown(t)
+		})
+	})
+
+	t.Run("'ErrEditConflict' when given 'ID' does not exist", func(t *testing.T) {
+		movie := Movie{
+			ID:        gofakeit.Int64(),
+			Title:     gofakeit.MovieName(),
+			Genres:    []string{gofakeit.MovieGenre()},
+			Year:      int32(gofakeit.Year()),
+			Runtime:   Runtime(gofakeit.Number(90, 180)),
+			Version:   gofakeit.Int32(),
+			CreatedAt: gofakeit.Date(),
+		}
+
+		err := testModels.Movies.Update(&movie)
+		require.ErrorIs(t, err, ErrEditConflict)
+	})
 }
