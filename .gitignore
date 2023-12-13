@@ -1,5 +1,5 @@
-development.env
-test.env
+.development.env
+.test.env
 /bin
 /tmp
 
