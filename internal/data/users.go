@@ -12,13 +12,13 @@ import (
 )
 
 type User struct {
-	ID        int64    `json:"id"`
-	CreatedAt string   `json:"createdAt"`
-	Name      string   `json:"name"`
-	Email     string   `json:"email"`
-	Password  password `json:"-"`
-	Activated bool     `json:"activated"`
-	Version   int      `json:"version"`
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"-"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  password  `json:"-"`
+	Activated bool      `json:"activated"`
+	Version   int32     `json:"version"`
 }
 
 var ErrDuplicateEmail = errors.New("duplicate email")
@@ -56,17 +56,20 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 	return true, nil
 }
 
+// TODO: Test at handler level
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "must be provided")
 	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
 }
 
+// TODO: Test at handler level
 func ValidatePasswordPlaintext(v *validator.Validator, password string) {
 	v.Check(password != "", "password", "must be provided")
 	v.Check(len(password) >= 8, "password", "must be at least 8 bytes long")
 	v.Check(len(password) <= 72, "password", "must not be more than 72 bytes long")
 }
 
+// TODO: Test at handler level
 func ValidateUser(v *validator.Validator, user *User) {
 	v.Check(user.Name != "", "name", "must be provided")
 	v.Check(len(user.Name) <= 500, "name", "must not be more than 500 bytes long")
@@ -144,7 +147,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 
 func (m UserModel) Update(user *User) error {
 	query := `
-        UPDATE users 
+        UPDATE users
         SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
         WHERE id = $5 AND version = $6
         RETURNING version`
@@ -164,7 +167,7 @@ func (m UserModel) Update(user *User) error {
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
 		switch {
-		case err.Error() == `pq duplicate key value violates unique constraint "users_email_key"`:
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
 			return ErrDuplicateEmail
 		default:
 			return err
@@ -174,6 +177,7 @@ func (m UserModel) Update(user *User) error {
 	return nil
 }
 
+// TODO: Test after TokenModel tests
 func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 

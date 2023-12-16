@@ -40,6 +40,7 @@ func (f Filters) offsett() int {
 	return (f.Page - 1) * f.PageSize
 }
 
+// TODO: Test at handler level
 func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.Page > 0, "page", "must be greater than zero")
 	v.Check(f.Page <= 10_000_000, "page", "must be a maximum of 10 milion")

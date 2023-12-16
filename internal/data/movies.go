@@ -23,6 +23,7 @@ type Movie struct {
 	CreatedAt time.Time `json:"-"`
 }
 
+// TODO: Test at handler level
 func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(movie.Title != "", "title", "must be provided")
 	v.Check(len(movie.Title) <= 500, "title", "must not be more than 500 bytes long")

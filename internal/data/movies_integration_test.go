@@ -15,21 +15,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// sortOrder indicates the sort order, it is represented
+// movieSortOrder indicates the sort order, it is represented
 // by itegers to help controlling sort direction with `slices.SortFunc`
-type sortOrder int
+type movieSortOrder int
 
 const (
-	ASC  sortOrder = 1
-	DESC sortOrder = -1
+	ASC  movieSortOrder = 1
+	DESC movieSortOrder = -1
 )
 
-// fallbackSort takes in two `Movie` and returns
+// fallbackMovieSort takes in two `Movie` and returns
 // and integer indicationg if `a.ID` is smaller,
 // bigger than `b.ID`. This helper is used as a
 // fallback when other properties of two `Movie`
 // elements are equal in other sort functions.
-func fallbackSort(a, b Movie) int {
+func fallbackMovieSort(a, b Movie) int {
 	if a.ID < b.ID {
 		return -1
 	}
@@ -37,10 +37,10 @@ func fallbackSort(a, b Movie) int {
 	return 1
 }
 
-// sortById it's a helper to sort elements during test cases.
+// sortMovieById it's a helper to sort elements during test cases.
 // It takes in a `[]Movie` and a `sortOrder`, and returns a `[]Movie`
 // sorted by `ID`.
-func sortById(m []Movie, so sortOrder) []Movie {
+func sortMovieById(m []Movie, so movieSortOrder) []Movie {
 	cn := slices.Clone(m)
 
 	slices.SortFunc(cn, func(a, b Movie) int {
@@ -54,12 +54,12 @@ func sortById(m []Movie, so sortOrder) []Movie {
 	return cn
 }
 
-// sortByTitle it's a helper to sort elements during test cases.
+// sortMovieByTitle it's a helper to sort elements during test cases.
 // It takes in a `[]Movie` and a `sortOrder`, and returns a `[]Movie`
 // sorted by `Title`. If the title is equal between elements in
 // the slice, the `ID` property will determine which element
 // should be placed first.
-func sortByTitle(m []Movie, so sortOrder) []Movie {
+func sortMovieByTitle(m []Movie, so movieSortOrder) []Movie {
 	cn := slices.Clone(m)
 
 	slices.SortFunc(cn, func(a, b Movie) int {
@@ -71,18 +71,18 @@ func sortByTitle(m []Movie, so sortOrder) []Movie {
 			return 1 * int(so)
 		}
 
-		return fallbackSort(a, b)
+		return fallbackMovieSort(a, b)
 	})
 
 	return cn
 }
 
-// sortByYear it's a helper to sort elements during test cases.
+// sortMovieByYear it's a helper to sort elements during test cases.
 // It takes in a `[]Movie` and a `sortOrder`, and returns a
 // `[]Movie` sorted by `Year`. If the year is equal between
 // elements in the slice, the `ID` property will determine
 // which element should be placed first.
-func sortByYear(m []Movie, so sortOrder) []Movie {
+func sortMovieByYear(m []Movie, so movieSortOrder) []Movie {
 	cn := slices.Clone(m)
 
 	slices.SortFunc(cn, func(a, b Movie) int {
@@ -94,18 +94,18 @@ func sortByYear(m []Movie, so sortOrder) []Movie {
 			return 1 * int(so)
 		}
 
-		return fallbackSort(a, b)
+		return fallbackMovieSort(a, b)
 	})
 
 	return cn
 }
 
-// sortByRuntime it's a helper to sort elements during test cases.
+// sortMovieByRuntime it's a helper to sort elements during test cases.
 // It takes in a `[]Movie` and a `sortOrder`, and returns a
 // `[]Movie` sorted by `Runtime`. If the runtime is equal between
 // elements in the slice, the `ID` property will determine
 // which element should be placed first.
-func sortByRuntime(m []Movie, so sortOrder) []Movie {
+func sortMovieByRuntime(m []Movie, so movieSortOrder) []Movie {
 	cn := slices.Clone(m)
 
 	slices.SortFunc(cn, func(a, b Movie) int {
@@ -117,18 +117,18 @@ func sortByRuntime(m []Movie, so sortOrder) []Movie {
 			return 1 * int(so)
 		}
 
-		return fallbackSort(a, b)
+		return fallbackMovieSort(a, b)
 	})
 
 	return cn
 }
 
-// filterByTitle it's a helper to filter elemests
+// filterMovieByTitle it's a helper to filter elemests
 // by a title search term during tests.
 // It takes in a string with the search and a `[]Movie`,
 // and returns a new slice of `Movie` that matches the
 // search term.
-func filterByTitle(st string, movies []Movie) []Movie {
+func filterMovieByTitle(st string, movies []Movie) []Movie {
 	results := make([]Movie, 0)
 
 	rx := regexp.MustCompile(`(?i)\b\w*` + st + `\w*\b`)
@@ -142,12 +142,12 @@ func filterByTitle(st string, movies []Movie) []Movie {
 	return results
 }
 
-// filterByGenres it's a helper to filter elements
+// filterMovieByGenres it's a helper to filter elements
 // by a slices of genres during tests.
 // It takes in the slice of genres and a `[]Movie`,
 // and returns a new slice of `Movie` containing
 // only the movie that matched the required genres.
-func filterByGenres(genres []string, movies []Movie) []Movie {
+func filterMovieByGenres(genres []string, movies []Movie) []Movie {
 	results := make([]Movie, 0)
 
 	for _, m := range movies {
@@ -194,11 +194,11 @@ func createRandomMovie(t *testing.T, m *Models) Movie {
 	return movie
 }
 
-// setup it's a helper to populate the database with
+// movieModelTestsSetup it's a helper to populate the database with
 // movies. It only takes in a pointer of `*testing.T`
 // and returns a `[]Movie`. The data is static and
 // came from `./db/seed/movies.sql`.
-func setup(t *testing.T) []Movie {
+func movieModelTestsSetup(t *testing.T) []Movie {
 	t.Helper()
 
 	movies := make([]Movie, 0)
@@ -241,9 +241,9 @@ func setup(t *testing.T) []Movie {
 	return movies
 }
 
-// teardown it's a helper to truncate the `movies`
+// movieModelTestsTeardown it's a helper to truncate the `movies`
 // table in the database during tests.
-func teardown(t *testing.T) {
+func movieModelTestsTeardown(t *testing.T) {
 	t.Helper()
 
 	query := `TRUNCATE TABLE movies RESTART IDENTITY`
@@ -254,23 +254,23 @@ func teardown(t *testing.T) {
 	}
 }
 
-func TestInsert(t *testing.T) {
+func TestMovieModelInsert(t *testing.T) {
 	testModels := NewModels(testDB)
 
 	createRandomMovie(t, &testModels)
 
 	t.Cleanup(func() {
-		teardown(t)
+		movieModelTestsTeardown(t)
 	})
 }
 
-func TestGetAll(t *testing.T) {
+func TestMovieModelGetAll(t *testing.T) {
 	const titleSearchTerm = "The"
 	const noResultsTitleSearchTerm = "Damage"
 
 	testModels := NewModels(testDB)
 
-	movies := setup(t)
+	movies := movieModelTestsSetup(t)
 
 	assertMovies := func(t *testing.T, expected []Movie, actual []Movie) {
 		require.NotZero(t, actual)
@@ -339,7 +339,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortById(movies, DESC)
+				expected := sortMovieById(movies, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -363,7 +363,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByTitle(movies, 1)
+				expected := sortMovieByTitle(movies, 1)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -387,7 +387,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByTitle(movies, -1)
+				expected := sortMovieByTitle(movies, -1)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -411,7 +411,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByYear(movies, ASC)
+				expected := sortMovieByYear(movies, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -435,7 +435,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByYear(movies, DESC)
+				expected := sortMovieByYear(movies, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -459,7 +459,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByRuntime(movies, ASC)
+				expected := sortMovieByRuntime(movies, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -483,7 +483,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortByRuntime(movies, DESC)
+				expected := sortMovieByRuntime(movies, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[0:20], data)
@@ -507,7 +507,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -531,8 +531,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortById(expected, DESC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieById(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -556,8 +556,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByTitle(expected, ASC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByTitle(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -581,8 +581,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByTitle(expected, DESC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByTitle(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -606,8 +606,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByYear(expected, ASC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByYear(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -631,8 +631,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByYear(expected, DESC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByYear(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -656,8 +656,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByRuntime(expected, ASC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByRuntime(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -681,8 +681,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = sortByRuntime(expected, DESC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = sortMovieByRuntime(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -706,7 +706,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Comedy", "Adventure"}, movies)
+				expected := filterMovieByGenres([]string{"Comedy", "Adventure"}, movies)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -730,8 +730,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Sci-Fi"}, movies)
-				expected = sortById(expected, DESC)
+				expected := filterMovieByGenres([]string{"Sci-Fi"}, movies)
+				expected = sortMovieById(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -755,8 +755,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Comedy", "Adventure"}, movies)
-				expected = sortByTitle(expected, ASC)
+				expected := filterMovieByGenres([]string{"Comedy", "Adventure"}, movies)
+				expected = sortMovieByTitle(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -780,8 +780,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Sci-Fi"}, movies)
-				expected = sortByTitle(expected, DESC)
+				expected := filterMovieByGenres([]string{"Sci-Fi"}, movies)
+				expected = sortMovieByTitle(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -805,8 +805,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Comedy", "Adventure"}, movies)
-				expected = sortByYear(expected, ASC)
+				expected := filterMovieByGenres([]string{"Comedy", "Adventure"}, movies)
+				expected = sortMovieByYear(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -830,8 +830,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Sci-Fi"}, movies)
-				expected = sortByYear(expected, DESC)
+				expected := filterMovieByGenres([]string{"Sci-Fi"}, movies)
+				expected = sortMovieByYear(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -855,8 +855,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Comedy", "Adventure"}, movies)
-				expected = sortByRuntime(expected, ASC)
+				expected := filterMovieByGenres([]string{"Comedy", "Adventure"}, movies)
+				expected = sortMovieByRuntime(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -880,8 +880,8 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByGenres([]string{"Sci-Fi"}, movies)
-				expected = sortByRuntime(expected, DESC)
+				expected := filterMovieByGenres([]string{"Sci-Fi"}, movies)
+				expected = sortMovieByRuntime(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -927,7 +927,7 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := sortById(movies, DESC)
+				expected := sortMovieById(movies, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected[20:40], data)
@@ -951,9 +951,9 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = filterByGenres([]string{"Romance"}, expected)
-				expected = sortByRuntime(expected, ASC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = filterMovieByGenres([]string{"Romance"}, expected)
+				expected = sortMovieByRuntime(expected, ASC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -977,9 +977,9 @@ func TestGetAll(t *testing.T) {
 				SortSafeList: MoviesSortSafeList,
 			},
 			assert: func(t *testing.T, data []Movie, meta Metadata, err error) {
-				expected := filterByTitle(titleSearchTerm, movies)
-				expected = filterByGenres([]string{"Sci-Fi", "Adventure"}, expected)
-				expected = sortByRuntime(expected, DESC)
+				expected := filterMovieByTitle(titleSearchTerm, movies)
+				expected = filterMovieByGenres([]string{"Sci-Fi", "Adventure"}, expected)
+				expected = sortMovieByRuntime(expected, DESC)
 
 				require.NoError(t, err)
 				assertMovies(t, expected, data)
@@ -1043,7 +1043,7 @@ func TestGetAll(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		teardown(t)
+		movieModelTestsTeardown(t)
 	})
 
 	for _, tc := range testCases {
@@ -1058,7 +1058,7 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestMovieModelGet(t *testing.T) {
 	testModels := NewModels(testDB)
 
 	t.Run("Successfully return movie data", func(t *testing.T) {
@@ -1075,7 +1075,7 @@ func TestGet(t *testing.T) {
 		require.WithinDuration(t, createdMovie.CreatedAt, gotMovie.CreatedAt, time.Second)
 
 		t.Cleanup(func() {
-			teardown(t)
+			movieModelTestsTeardown(t)
 		})
 	})
 
@@ -1094,7 +1094,7 @@ func TestGet(t *testing.T) {
 	})
 }
 
-func TestDelete(t *testing.T) {
+func TestMovieModelDelete(t *testing.T) {
 	testModels := NewModels(testDB)
 
 	t.Run("Successfully delete a movie", func(t *testing.T) {
@@ -1110,7 +1110,7 @@ func TestDelete(t *testing.T) {
 		require.ErrorIs(t, err, ErrRecordNotFound)
 
 		t.Cleanup(func() {
-			teardown(t)
+			movieModelTestsTeardown(t)
 		})
 	})
 
@@ -1127,7 +1127,7 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func TestUpdate(t *testing.T) {
+func TestMovieModelUpdate(t *testing.T) {
 	testModels := NewModels(testDB)
 
 	t.Run("Successfully update a movie", func(t *testing.T) {
@@ -1146,9 +1146,11 @@ func TestUpdate(t *testing.T) {
 		require.Equal(t, movie.Title, updatedMovie.Title)
 		require.Equal(t, movie.Runtime, updatedMovie.Runtime)
 		require.Equal(t, movie.Year, updatedMovie.Year)
+		require.Equal(t, movie.Version, int32(2))
+		require.Equal(t, movie.Version, updatedMovie.Version)
 
 		t.Cleanup(func() {
-			teardown(t)
+			movieModelTestsTeardown(t)
 		})
 	})
 

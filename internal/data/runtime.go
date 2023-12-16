@@ -10,6 +10,7 @@ var ErrInvalidRuntimeFormat = fmt.Errorf("invalid runtime format")
 
 type Runtime int32
 
+// TODO: Test at handler level
 func (r Runtime) MarshalJSON() ([]byte, error) {
 	jsonValue := fmt.Sprintf("%d mins", r)
 
@@ -18,6 +19,7 @@ func (r Runtime) MarshalJSON() ([]byte, error) {
 	return []byte(quotedJSONValue), nil
 }
 
+// TODO: Test at handler level
 func (r *Runtime) UnmarshalJSON(jsonValue []byte) error {
 	unquotedJSONValue, err := strconv.Unquote(string(jsonValue))
 	if err != nil {
