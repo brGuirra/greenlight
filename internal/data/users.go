@@ -177,7 +177,6 @@ func (m UserModel) Update(user *User) error {
 	return nil
 }
 
-// TODO: Test after TokenModel tests
 func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 

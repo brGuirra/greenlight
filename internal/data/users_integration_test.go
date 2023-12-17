@@ -162,3 +162,43 @@ func TestUserModelUdpate(t *testing.T) {
 		})
 	})
 }
+
+func TestGetForToken(t *testing.T) {
+	t.Run("Successfully returns user data", func(t *testing.T) {
+		testModels := NewModels(testDB)
+
+		createdUser := createRandomUser(t, &testModels)
+		token := createRandomToken(t, &testModels, createdUser.ID)
+
+		gotUser, err := testModels.Users.GetForToken(token.Scope, token.Plaintext)
+
+		require.NoError(t, err)
+
+		require.Equal(t, createdUser.ID, gotUser.ID)
+		require.Equal(t, createdUser.Name, gotUser.Name)
+		require.Equal(t, createdUser.Email, gotUser.Email)
+		require.Equal(t, createdUser.Password.hash, gotUser.Password.hash)
+		require.Equal(t, createdUser.Activated, gotUser.Activated)
+		require.Equal(t, createdUser.Version, gotUser.Version)
+		require.WithinDuration(t, createdUser.CreatedAt, gotUser.CreatedAt, time.Second)
+
+		t.Cleanup(func() {
+			userModelTestsTeardown(t)
+		})
+	})
+
+	t.Run("'ErrRecordNotFound' when given token information does not exist", func(t *testing.T) {
+		testModels := NewModels(testDB)
+
+		createRandomUser(t, &testModels)
+
+		gotUser, err := testModels.Users.GetForToken(gofakeit.Noun(), gofakeit.Noun())
+
+		require.ErrorIs(t, err, ErrRecordNotFound)
+		require.Nil(t, gotUser)
+
+		t.Cleanup(func() {
+			userModelTestsTeardown(t)
+		})
+	})
+}
